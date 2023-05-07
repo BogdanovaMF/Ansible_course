@@ -1,0 +1,4 @@
+- hosts: servers
+  become: true
+  roles:
+     - role: os_update

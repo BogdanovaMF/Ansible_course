@@ -1,0 +1,39 @@
+---
+# file: roles/os_update/tasks/main.yml
+
+- name: Обновление CentOS
+  block:
+
+    - name: Обновление всех пакетов CentOS 7 (кроме foo)
+      yum:
+        name: "*"
+        state: latest
+        exclude: foo
+      when: ansible_distribution_major_version == '7'
+
+    - name: Обновление всех пакетов CentOS
+      shell: dnf update -y --nobest
+      register: result
+      changed_when:
+        - '"Nothing to do" not in result.stdout'
+      when: ansible_distribution_major_version == '8'
+
+    - name: Обновление grep CentOS
+      shell: rpm -qa --last | grep "$(date +%a\ %d\ %b\ %Y)" |cut -f 1 -d " "
+      register: result
+      changed_when: false
+      tags:
+        - skip_ansible_lint
+
+    - name: показать обновления CentOS
+      debug:
+        msg: "{{ result.stdout_lines }}"
+
+    - name: Перезагрузка сервера
+      command: /sbin/shutdown -r +1
+      async: 0
+      poll: 0
+      ignore_errors: true
+
+  when: ansible_distribution in ['CentOS']
+
